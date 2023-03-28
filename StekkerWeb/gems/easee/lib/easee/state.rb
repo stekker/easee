@@ -14,7 +14,7 @@ module Easee
       @data = data.transform_keys(&:to_sym)
     end
 
-    def charging? = [:charging, :awaiting_start].include?(charger_op_mode)
+    def charging? = charger_op_mode == :charging
     def disconnected? = charger_op_mode == :disconnected
     def online? = @data.fetch(:isOnline)
 

@@ -1,11 +1,11 @@
 RSpec.describe Easee::State do
   describe "#charging?" do
-    it "returns true when the charger op mode is :awaiting_start" do
-      expect(Easee::State.new(chargerOpMode: 2)).to be_charging
-    end
-
     it "returns true when the charger op mode is :charging" do
       expect(Easee::State.new(chargerOpMode: 3)).to be_charging
+    end
+
+    it "returns false when the charger op mode is :awaiting_start" do
+      expect(Easee::State.new(chargerOpMode: 2)).not_to be_charging
     end
 
     it "returns false for all other charger op modes" do

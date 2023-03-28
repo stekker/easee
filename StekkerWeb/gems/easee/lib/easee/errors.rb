@@ -1,6 +1,6 @@
 module Easee
   module Errors
-    class Base < ::RuntimeError; end
+    class Base < ::StandardError; end
     class RequestFailed < Base; end
   end
 end

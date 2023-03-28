@@ -9,9 +9,21 @@ RSpec.describe Easee::Client do
 
       client = Easee::Client.new(user_name: "easee", password: "money")
 
-      client.pair(charger_id: "123ABC", pin_code: "1234")
-
       expect { client.pair(charger_id: "123ABC", pin_code: "1234") }.not_to raise_error
+    end
+  end
+
+  describe "#unpair" do
+    it "unpairs a charger" do
+      stub_token_request(user_name: "easee", password: "money")
+
+      stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/unpair?pinCode=1234")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(status: 200, body: "")
+
+      client = Easee::Client.new(user_name: "easee", password: "money")
+
+      expect { client.unpair(charger_id: "123ABC", pin_code: "1234") }.not_to raise_error
     end
   end
 

@@ -8,6 +8,11 @@ module Easee
       @access_token = nil
     end
 
+    # https://developer.easee.cloud/reference/post_api-chargers-id-unpair
+    def unpair(charger_id:, pin_code:)
+      post("/api/chargers/#{charger_id}/unpair", query: { pinCode: pin_code })
+    end
+
     # https://developer.easee.cloud/reference/post_api-chargers-id-pair
     def pair(charger_id:, pin_code:)
       post("/api/chargers/#{charger_id}/pair", query: { pinCode: pin_code })

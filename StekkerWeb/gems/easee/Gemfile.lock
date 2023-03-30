@@ -6,7 +6,6 @@ PATH
       activesupport
       faraday
       faraday_middleware
-      thread_safe
 
 GEM
   remote: https://rubygems.org/
@@ -101,7 +100,6 @@ GEM
       rubocop-capybara (~> 2.17)
     ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
-    thread_safe (0.3.6)
     timecop (0.9.6)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)

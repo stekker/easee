@@ -1,10 +1,12 @@
-require "thread_safe"
+require "active_support/notifications"
+require "active_support/cache"
 
 module Easee
   class Client
     BASE_URL = "https://api.easee.cloud".freeze
+    TOKENS_CACHE_KEY = "easee.auth.tokens".freeze
 
-    def initialize(user_name:, password:, token_cache: ThreadSafe::Cache.new)
+    def initialize(user_name:, password:, token_cache: ActiveSupport::Cache::MemoryStore.new)
       @user_name = user_name
       @password = password
       @token_cache = token_cache
@@ -87,12 +89,12 @@ module Easee
 
     def access_token
       @token_cache
-        .fetch_or_store(:tokens) { request_access_token }
+        .fetch(TOKENS_CACHE_KEY) { request_access_token }
         .fetch("accessToken")
     end
 
     def refresh_access_token!
-      @token_cache.put(:tokens, refresh_access_token)
+      @token_cache.write(TOKENS_CACHE_KEY, refresh_access_token, expires_in: 1.day)
     rescue Faraday::Error => e
       raise Errors::RequestFailed, "Request returned status #{e.response_status}"
     end
@@ -106,7 +108,7 @@ module Easee
 
     # https://developer.easee.cloud/reference/post_api-accounts-refresh-token
     def refresh_access_token
-      tokens = @token_cache.fetch(:tokens)
+      tokens = @token_cache.fetch(TOKENS_CACHE_KEY)
 
       connection
         .post(

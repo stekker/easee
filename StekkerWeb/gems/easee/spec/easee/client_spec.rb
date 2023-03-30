@@ -3,7 +3,7 @@ RSpec.describe Easee::Client do
     it "obtains and uses a new access token when none is provided" do
       user_name = "easee"
       password = "money"
-      token_cache = ThreadSafe::Cache.new
+      token_cache = ActiveSupport::Cache::MemoryStore.new
       tokens = { "accessToken" => "T123" }
 
       stub_request(:post, "https://api.easee.cloud/api/accounts/login")
@@ -23,7 +23,7 @@ RSpec.describe Easee::Client do
       client = Easee::Client.new(user_name:, password:, token_cache:)
 
       expect { client.pair(charger_id: "123ABC", pin_code: "1234") }
-        .to change { token_cache[:tokens] }
+        .to change { token_cache.fetch(Easee::Client::TOKENS_CACHE_KEY) }
         .from(nil)
         .to(tokens)
     end
@@ -31,9 +31,9 @@ RSpec.describe Easee::Client do
     it "refreshes the access token and uses the new one when it is expired" do
       user_name = "easee"
       password = "money"
-      token_cache = ThreadSafe::Cache.new
+      token_cache = ActiveSupport::Cache::MemoryStore.new
       current_tokens = { "accessToken" => "T123", "refreshToken" => "R456" }
-      token_cache[:tokens] = current_tokens
+      token_cache.write(Easee::Client::TOKENS_CACHE_KEY, current_tokens)
       new_tokens = { "accessToken" => "T789" }
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
@@ -55,7 +55,7 @@ RSpec.describe Easee::Client do
       client = Easee::Client.new(user_name:, password:, token_cache:)
 
       expect { client.pair(charger_id: "123ABC", pin_code: "1234") }
-        .to change { token_cache[:tokens] }
+        .to change { token_cache.fetch(Easee::Client::TOKENS_CACHE_KEY) }
         .from(current_tokens)
         .to(new_tokens)
     end
@@ -63,9 +63,9 @@ RSpec.describe Easee::Client do
     it "only tries to refresh the access token once" do
       user_name = "easee"
       password = "money"
-      token_cache = ThreadSafe::Cache.new
+      token_cache = ActiveSupport::Cache::MemoryStore.new
       current_tokens = { "accessToken" => "T123", "refreshToken" => "R456" }
-      token_cache[:tokens] = current_tokens
+      token_cache.write(Easee::Client::TOKENS_CACHE_KEY, current_tokens)
       new_tokens = { "accessToken" => "T789", "refreshToken" => "R654" }
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
@@ -92,9 +92,9 @@ RSpec.describe Easee::Client do
     it "fails when the acess token could not be refreshed" do
       user_name = "easee"
       password = "money"
-      token_cache = ThreadSafe::Cache.new
+      token_cache = ActiveSupport::Cache::MemoryStore.new
       current_tokens = { "accessToken" => "T123", "refreshToken" => "R456" }
-      token_cache[:tokens] = current_tokens
+      token_cache.write(Easee::Client::TOKENS_CACHE_KEY, current_tokens)
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
         .to_return(
@@ -123,7 +123,11 @@ RSpec.describe Easee::Client do
 
   describe "#pair" do
     it "pairs a new charger" do
-      token_cache = ThreadSafe::Cache.new.tap { |x| x[:tokens] = { "accessToken" => "T123" } }
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" },
+      )
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
         .with(headers: { "Authorization" => "Bearer T123" })
@@ -137,7 +141,11 @@ RSpec.describe Easee::Client do
 
   describe "#unpair" do
     it "unpairs a charger" do
-      token_cache = ThreadSafe::Cache.new.tap { |x| x[:tokens] = { "accessToken" => "T123" } }
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" },
+      )
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/unpair?pinCode=1234")
         .with(headers: { "Authorization" => "Bearer T123" })
@@ -154,7 +162,11 @@ RSpec.describe Easee::Client do
       now = Time.zone.local(2023, 3, 27, 15, 21)
       Timecop.freeze(now)
 
-      token_cache = ThreadSafe::Cache.new.tap { |x| x[:tokens] = { "accessToken" => "T123" } }
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" },
+      )
 
       stub_request(:get, "https://api.easee.cloud/api/chargers/C123/state")
         .with(headers: { "Authorization" => "Bearer T123" })
@@ -181,7 +193,11 @@ RSpec.describe Easee::Client do
 
   describe "#pause_charging" do
     it "sends a pause_charging command" do
-      token_cache = ThreadSafe::Cache.new.tap { |x| x[:tokens] = { "accessToken" => "T123" } }
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" },
+      )
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/C123/commands/pause_charging")
         .with(headers: { "Authorization" => "Bearer T123" })
@@ -195,7 +211,11 @@ RSpec.describe Easee::Client do
 
   describe "#resume_charging" do
     it "sends a resume_charging command" do
-      token_cache = ThreadSafe::Cache.new.tap { |x| x[:tokens] = { "accessToken" => "T123" } }
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" },
+      )
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/C123/commands/resume_charging")
         .with(headers: { "Authorization" => "Bearer T123" })

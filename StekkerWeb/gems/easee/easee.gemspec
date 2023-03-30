@@ -29,7 +29,6 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "activesupport"
   spec.add_runtime_dependency "faraday"
   spec.add_runtime_dependency "faraday_middleware"
-  spec.add_runtime_dependency "thread_safe"
 
   spec.metadata["rubygems_mfa_required"] = "true"
 end

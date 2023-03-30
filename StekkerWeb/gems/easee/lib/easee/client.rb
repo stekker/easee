@@ -4,10 +4,10 @@ module Easee
   class Client
     BASE_URL = "https://api.easee.cloud".freeze
 
-    def initialize(user_name:, password:, token_store: ThreadSafe::Cache.new)
+    def initialize(user_name:, password:, token_cache: ThreadSafe::Cache.new)
       @user_name = user_name
       @password = password
-      @token_store = token_store
+      @token_cache = token_cache
     end
 
     # https://developer.easee.cloud/reference/post_api-chargers-id-unpair
@@ -86,13 +86,13 @@ module Easee
     end
 
     def access_token
-      @token_store
+      @token_cache
         .fetch_or_store(:tokens) { request_access_token }
         .fetch("accessToken")
     end
 
     def refresh_access_token!
-      @token_store.put(:tokens, refresh_access_token)
+      @token_cache.put(:tokens, refresh_access_token)
     rescue Faraday::Error => e
       raise Errors::RequestFailed, "Request returned status #{e.response_status}"
     end
@@ -106,7 +106,7 @@ module Easee
 
     # https://developer.easee.cloud/reference/post_api-accounts-refresh-token
     def refresh_access_token
-      tokens = @token_store.fetch(:tokens)
+      tokens = @token_cache.fetch(:tokens)
 
       connection
         .post(

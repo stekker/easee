@@ -1,3 +1,5 @@
+require "thread_safe"
+
 module Easee
   class Client
     BASE_URL = "https://api.easee.cloud".freeze

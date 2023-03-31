@@ -261,4 +261,16 @@ RSpec.describe Easee::Client do
       expect { client.resume_charging("C123") }.not_to raise_error
     end
   end
+
+  describe "#inspect" do
+    it "does not include the user name and password" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      encryptor = Easee::NullEncryptor.new
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:, encryptor:)
+
+      expect(client.inspect).to match(<<~INSPECT)
+        #<Easee::Client @user_name="[FILTERED]", @password="[FILTERED]", @token_cache=#{token_cache.inspect}, @encryptor=#{encryptor.inspect}>
+      INSPECT
+    end
+  end
 end

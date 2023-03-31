@@ -46,6 +46,12 @@ module Easee
       post("/api/chargers/#{charger_id}/commands/resume_charging")
     end
 
+    def inspect
+      <<~INSPECT
+        #<#{self.class.name} @user_name="[FILTERED]", @password="[FILTERED]", @token_cache=#{@token_cache.inspect}, @encryptor=#{@encryptor.inspect}>
+      INSPECT
+    end
+
     private
 
     attr_reader :user_name, :password

@@ -38,7 +38,7 @@ RSpec.describe Easee::State do
       now = Time.zone.local(2023, 3, 27, 15, 21)
       Timecop.freeze(now)
 
-      state = Easee::State.new(sessionEnergy: 23.67)
+      state = Easee::State.new(lifetimeEnergy: 23.67)
 
       expect(state.meter_reading).to have_attributes(reading_kwh: 23.67, timestamp: now)
     end

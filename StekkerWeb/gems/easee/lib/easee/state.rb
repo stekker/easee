@@ -20,7 +20,7 @@ module Easee
 
     def meter_reading
       MeterReading.new(
-        reading_kwh: @data.fetch(:sessionEnergy),
+        reading_kwh: @data.fetch(:lifetimeEnergy),
         timestamp: Time.current,
       )
     end

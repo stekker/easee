@@ -25,7 +25,7 @@ RSpec.describe Easee::Client do
       expect { client.pair(charger_id: "123ABC", pin_code: "1234") }
         .to change { token_cache.fetch(Easee::Client::TOKENS_CACHE_KEY) }
         .from(nil)
-        .to(tokens)
+        .to(tokens.to_json)
     end
 
     it "refreshes the access token and uses the new one when it is expired" do
@@ -33,7 +33,7 @@ RSpec.describe Easee::Client do
       password = "money"
       token_cache = ActiveSupport::Cache::MemoryStore.new
       current_tokens = { "accessToken" => "T123", "refreshToken" => "R456" }
-      token_cache.write(Easee::Client::TOKENS_CACHE_KEY, current_tokens)
+      token_cache.write(Easee::Client::TOKENS_CACHE_KEY, current_tokens.to_json)
       new_tokens = { "accessToken" => "T789" }
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
@@ -56,8 +56,8 @@ RSpec.describe Easee::Client do
 
       expect { client.pair(charger_id: "123ABC", pin_code: "1234") }
         .to change { token_cache.fetch(Easee::Client::TOKENS_CACHE_KEY) }
-        .from(current_tokens)
-        .to(new_tokens)
+        .from(current_tokens.to_json)
+        .to(new_tokens.to_json)
     end
 
     it "only tries to refresh the access token once" do
@@ -65,7 +65,7 @@ RSpec.describe Easee::Client do
       password = "money"
       token_cache = ActiveSupport::Cache::MemoryStore.new
       current_tokens = { "accessToken" => "T123", "refreshToken" => "R456" }
-      token_cache.write(Easee::Client::TOKENS_CACHE_KEY, current_tokens)
+      token_cache.write(Easee::Client::TOKENS_CACHE_KEY, current_tokens.to_json)
       new_tokens = { "accessToken" => "T789", "refreshToken" => "R654" }
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
@@ -94,7 +94,7 @@ RSpec.describe Easee::Client do
       password = "money"
       token_cache = ActiveSupport::Cache::MemoryStore.new
       current_tokens = { "accessToken" => "T123", "refreshToken" => "R456" }
-      token_cache.write(Easee::Client::TOKENS_CACHE_KEY, current_tokens)
+      token_cache.write(Easee::Client::TOKENS_CACHE_KEY, current_tokens.to_json)
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
         .to_return(
@@ -119,6 +119,41 @@ RSpec.describe Easee::Client do
       expect { client.pair(charger_id: "123ABC", pin_code: "1234") }
         .to raise_error(Easee::Errors::RequestFailed)
     end
+
+    it "uses the encryptor to encrypt the tokens" do
+      user_name = "easee"
+      password = "money"
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      tokens = { "accessToken" => "T123" }
+
+      encryptor = instance_double(Easee::NullEncryptor)
+      allow(encryptor).to receive(:encrypt).and_return("encrypted")
+      allow(encryptor).to receive(:decrypt).and_return(tokens.to_json)
+
+      stub_request(:post, "https://api.easee.cloud/api/accounts/login")
+        .with(
+          body: { userName: user_name, password: }.to_json,
+        )
+        .to_return(
+          status: 200,
+          body: tokens.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(status: 200, body: "")
+
+      client = Easee::Client.new(user_name:, password:, token_cache:, encryptor:)
+
+      expect { client.pair(charger_id: "123ABC", pin_code: "1234") }
+        .to change { token_cache.fetch(Easee::Client::TOKENS_CACHE_KEY) }
+        .from(nil)
+        .to("encrypted")
+
+      expect(encryptor).to have_received(:encrypt).with(tokens.to_json, cipher_options: { deterministic: true })
+      expect(encryptor).to have_received(:decrypt).with("encrypted")
+    end
   end
 
   describe "#pair" do
@@ -126,7 +161,7 @@ RSpec.describe Easee::Client do
       token_cache = ActiveSupport::Cache::MemoryStore.new
       token_cache.write(
         Easee::Client::TOKENS_CACHE_KEY,
-        { "accessToken" => "T123" },
+        { "accessToken" => "T123" }.to_json,
       )
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
@@ -144,7 +179,7 @@ RSpec.describe Easee::Client do
       token_cache = ActiveSupport::Cache::MemoryStore.new
       token_cache.write(
         Easee::Client::TOKENS_CACHE_KEY,
-        { "accessToken" => "T123" },
+        { "accessToken" => "T123" }.to_json,
       )
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/unpair?pinCode=1234")
@@ -165,7 +200,7 @@ RSpec.describe Easee::Client do
       token_cache = ActiveSupport::Cache::MemoryStore.new
       token_cache.write(
         Easee::Client::TOKENS_CACHE_KEY,
-        { "accessToken" => "T123" },
+        { "accessToken" => "T123" }.to_json,
       )
 
       stub_request(:get, "https://api.easee.cloud/api/chargers/C123/state")
@@ -196,7 +231,7 @@ RSpec.describe Easee::Client do
       token_cache = ActiveSupport::Cache::MemoryStore.new
       token_cache.write(
         Easee::Client::TOKENS_CACHE_KEY,
-        { "accessToken" => "T123" },
+        { "accessToken" => "T123" }.to_json,
       )
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/C123/commands/pause_charging")
@@ -214,7 +249,7 @@ RSpec.describe Easee::Client do
       token_cache = ActiveSupport::Cache::MemoryStore.new
       token_cache.write(
         Easee::Client::TOKENS_CACHE_KEY,
-        { "accessToken" => "T123" },
+        { "accessToken" => "T123" }.to_json,
       )
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/C123/commands/resume_charging")

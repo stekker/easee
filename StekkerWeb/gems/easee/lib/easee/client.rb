@@ -1,15 +1,23 @@
 require "active_support/notifications"
 require "active_support/cache"
 
+require_relative "null_encryptor"
+
 module Easee
   class Client
     BASE_URL = "https://api.easee.cloud".freeze
     TOKENS_CACHE_KEY = "easee.auth.tokens".freeze
 
-    def initialize(user_name:, password:, token_cache: ActiveSupport::Cache::MemoryStore.new)
+    def initialize(
+      user_name:,
+      password:,
+      token_cache: ActiveSupport::Cache::MemoryStore.new,
+      encryptor: NullEncryptor.new
+    )
       @user_name = user_name
       @password = password
       @token_cache = token_cache
+      @encryptor = encryptor
     end
 
     # https://developer.easee.cloud/reference/post_api-chargers-id-unpair
@@ -45,7 +53,6 @@ module Easee
     def connection
       Faraday.new(url: BASE_URL) do |conn|
         conn.request :json
-        conn.response :json, content_type: /\bjson$/
         conn.response :raise_error
       end
     end
@@ -53,6 +60,7 @@ module Easee
     def authenticated_connection
       connection.tap do |conn|
         conn.request :authorization, "Bearer", access_token
+        conn.response :json, content_type: /\bjson$/
       end
     end
 
@@ -88,13 +96,21 @@ module Easee
     end
 
     def access_token
-      @token_cache
-        .fetch(TOKENS_CACHE_KEY) { request_access_token }
-        .fetch("accessToken")
+      encrypted_tokens = @token_cache.fetch(TOKENS_CACHE_KEY) do
+        @encryptor.encrypt(request_access_token, cipher_options: { deterministic: true })
+      end
+
+      plain_text_tokens = @encryptor.decrypt(encrypted_tokens)
+
+      JSON.parse(plain_text_tokens).fetch("accessToken")
     end
 
     def refresh_access_token!
-      @token_cache.write(TOKENS_CACHE_KEY, refresh_access_token, expires_in: 1.day)
+      @token_cache.write(
+        TOKENS_CACHE_KEY,
+        @encryptor.encrypt(refresh_access_token, cipher_options: { deterministic: true }),
+        expires_in: 1.day,
+      )
     rescue Faraday::Error => e
       raise Errors::RequestFailed, "Request returned status #{e.response_status}"
     end
@@ -108,7 +124,11 @@ module Easee
 
     # https://developer.easee.cloud/reference/post_api-accounts-refresh-token
     def refresh_access_token
-      tokens = @token_cache.fetch(TOKENS_CACHE_KEY)
+      tokens = JSON.parse(
+        @encryptor.decrypt(
+          @token_cache.fetch(TOKENS_CACHE_KEY),
+        ),
+      )
 
       connection
         .post(

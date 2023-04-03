@@ -207,7 +207,7 @@ RSpec.describe Easee::Client do
         .with(headers: { "Authorization" => "Bearer T123" })
         .to_return(
           status: 200,
-          body: { chargerOpMode: 3, sessionEnergy: 23.67, isOnline: true }.to_json,
+          body: { chargerOpMode: 3, lifetimeEnergy: 23.67, isOnline: true }.to_json,
           headers: { "Content-Type": "application/json" },
         )
 

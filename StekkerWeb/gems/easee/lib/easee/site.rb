@@ -6,10 +6,10 @@ module Easee
 
     def name = @data.fetch(:name)
     def street = address.fetch(:street)
-    def house_number = address.fetch(:buildingNumber)
-    def zip_code = address.fetch(:zip)
-    def city = address.fetch(:area)
-    def country = address.fetch(:country).fetch(:id)
+    def building_number = address.fetch(:buildingNumber)
+    def zip = address.fetch(:zip)
+    def area = address.fetch(:area)
+    def country_id = address.fetch(:country).fetch(:id)
     def latitude = address.fetch(:latitude)
     def longitude = address.fetch(:longitude)
 

@@ -214,8 +214,8 @@ RSpec.describe Easee::Client do
 
       expect(configuration)
         .to have_attributes(
-          number_of_phases: 2,
-          max_current_amp: 32,
+          phase_mode: 2,
+          max_charger_current: 32,
         )
     end
   end
@@ -258,10 +258,10 @@ RSpec.describe Easee::Client do
         .to have_attributes(
           name: "Home charger",
           street: "Lindelaan",
-          house_number: "31",
-          zip_code: "1234 Ab",
-          city: "Laderburg",
-          country: "NL",
+          building_number: "31",
+          zip: "1234 Ab",
+          area: "Laderburg",
+          country_id: "NL",
           latitude: 51.949433,
           longitude: 5.231064,
         )

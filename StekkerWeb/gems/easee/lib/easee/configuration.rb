@@ -4,7 +4,7 @@ module Easee
       @data = data.symbolize_keys
     end
 
-    def number_of_phases = @data.fetch(:phaseMode)
-    def max_current_amp = @data.fetch(:maxChargerCurrent)
+    def phase_mode = @data.fetch(:phaseMode)
+    def max_charger_current = @data.fetch(:maxChargerCurrent)
   end
 end

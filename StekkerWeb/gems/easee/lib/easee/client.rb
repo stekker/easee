@@ -47,7 +47,7 @@ module Easee
     end
 
     def configuration(charger_id)
-      get("/api/chargers/#{charger_id}/configuration")
+      get("/api/chargers/#{charger_id}/config")
         .then { |response| Configuration.new(response.body) }
     end
 

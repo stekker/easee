@@ -200,7 +200,7 @@ RSpec.describe Easee::Client do
         { "accessToken" => "T123" }.to_json,
       )
 
-      stub_request(:get, "https://api.easee.cloud/api/chargers/C123/configuration")
+      stub_request(:get, "https://api.easee.cloud/api/chargers/C123/config")
         .with(headers: { "Authorization" => "Bearer T123" })
         .to_return(
           status: 200,

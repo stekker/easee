@@ -192,6 +192,82 @@ RSpec.describe Easee::Client do
     end
   end
 
+  describe "#configuration" do
+    it "fetches the technical configuration" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      stub_request(:get, "https://api.easee.cloud/api/chargers/C123/configuration")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(
+          status: 200,
+          body: { phaseMode: 2, maxChargerCurrent: 32 }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      configuration = client.configuration("C123")
+
+      expect(configuration)
+        .to have_attributes(
+          number_of_phases: 2,
+          max_current_amp: 32,
+        )
+    end
+  end
+
+  describe "#site" do
+    it "fetches name/address/location info" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      stub_request(:get, "https://api.easee.cloud/api/chargers/C123/site")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(
+          status: 200,
+          body: {
+            name: "Home charger",
+            address: {
+              street: "Lindelaan",
+              buildingNumber: "31",
+              zip: "1234 Ab",
+              area: "Laderburg",
+              country: {
+                id: "NL",
+                name: "Netherlands",
+              },
+              latitude: 51.949433,
+              longitude: 5.231064,
+            },
+          }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      site = client.site("C123")
+
+      expect(site)
+        .to have_attributes(
+          name: "Home charger",
+          street: "Lindelaan",
+          house_number: "31",
+          zip_code: "1234 Ab",
+          city: "Laderburg",
+          country: "NL",
+          latitude: 51.949433,
+          longitude: 5.231064,
+        )
+    end
+  end
+
   describe "#state" do
     it "fetches the state for a charger" do
       now = Time.zone.local(2023, 3, 27, 15, 21)

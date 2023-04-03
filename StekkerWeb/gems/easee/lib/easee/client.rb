@@ -46,6 +46,16 @@ module Easee
       post("/api/chargers/#{charger_id}/commands/resume_charging")
     end
 
+    def configuration(charger_id)
+      get("/api/chargers/#{charger_id}/configuration")
+        .then { |response| Configuration.new(response.body) }
+    end
+
+    def site(charger_id)
+      get("/api/chargers/#{charger_id}/site")
+        .then { |response| Site.new(response.body) }
+    end
+
     def inspect
       <<~INSPECT
         #<#{self.class.name} @user_name="[FILTERED]", @password="[FILTERED]", @token_cache=#{@token_cache.inspect}, @encryptor=#{@encryptor.inspect}>

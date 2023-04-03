@@ -11,7 +11,7 @@ module Easee
     }.freeze
 
     def initialize(data)
-      @data = data.transform_keys(&:to_sym)
+      @data = data.symbolize_keys
     end
 
     def charging? = charger_op_mode == :charging

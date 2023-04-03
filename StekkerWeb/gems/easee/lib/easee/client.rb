@@ -100,7 +100,7 @@ module Easee
       yield
     rescue Faraday::UnauthorizedError => e
       if token_refreshed
-        raise Errors::RequestFailed, "Request returned status #{e.response_status}"
+        raise Errors::RequestFailed.new("Request returned status #{e.response_status}", e.response)
       else
         refresh_access_token!
         token_refreshed = true
@@ -108,7 +108,7 @@ module Easee
         retry
       end
     rescue Faraday::Error => e
-      raise Errors::RequestFailed, "Request returned status #{e.response_status}"
+      raise Errors::RequestFailed.new("Request returned status #{e.response_status}", e.response)
     end
 
     def access_token
@@ -128,7 +128,7 @@ module Easee
         expires_in: 1.day,
       )
     rescue Faraday::Error => e
-      raise Errors::RequestFailed, "Request returned status #{e.response_status}"
+      raise Errors::RequestFailed.new("Request returned status #{e.response_status}", e.response)
     end
 
     # https://developer.easee.cloud/reference/post_api-accounts-login

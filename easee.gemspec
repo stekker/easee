@@ -2,7 +2,7 @@ require_relative "lib/easee/version"
 ruby_version = File.read(".ruby-version").strip
 
 Gem::Specification.new do |spec|
-  spec.name          = "easee"
+  spec.name          = "stekker_easee"
   spec.version       = Easee::VERSION
   spec.authors       = ["Team Stekker"]
   spec.email         = ["support@stekker.com"]

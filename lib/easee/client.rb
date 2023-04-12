@@ -125,7 +125,7 @@ module Easee
       @token_cache.write(
         TOKENS_CACHE_KEY,
         @encryptor.encrypt(refresh_access_token, cipher_options: { deterministic: true }),
-        expires_in: 1.day
+        expires_in: 1.day,
       )
     rescue Faraday::Error => e
       raise Errors::RequestFailed.new("Request returned status #{e.response_status}", e.response)
@@ -142,15 +142,15 @@ module Easee
     def refresh_access_token
       tokens = JSON.parse(
         @encryptor.decrypt(
-          @token_cache.fetch(TOKENS_CACHE_KEY)
-        )
+          @token_cache.fetch(TOKENS_CACHE_KEY),
+        ),
       )
 
       connection
         .post(
           "/api/accounts/refresh_token",
           accessToken: tokens.fetch("accessToken"),
-          refreshToken: tokens.fetch("refreshToken")
+          refreshToken: tokens.fetch("refreshToken"),
         )
         .then(&:body)
     end

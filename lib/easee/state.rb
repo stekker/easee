@@ -7,7 +7,7 @@ module Easee
       3 => :charging,
       4 => :completed,
       5 => :error,
-      6 => :ready_to_charge,
+      6 => :ready_to_charge
     }.freeze
 
     def initialize(data)
@@ -21,7 +21,7 @@ module Easee
     def meter_reading
       MeterReading.new(
         reading_kwh: @data.fetch(:lifetimeEnergy),
-        timestamp: Time.current,
+        timestamp: Time.current
       )
     end
 

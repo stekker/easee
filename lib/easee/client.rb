@@ -46,11 +46,13 @@ module Easee
       post("/api/chargers/#{charger_id}/commands/resume_charging")
     end
 
+    # https://developer.easee.cloud/reference/get_api-chargers-id-config
     def configuration(charger_id)
       get("/api/chargers/#{charger_id}/config")
         .then { |response| Configuration.new(response.body) }
     end
 
+    # https://developer.easee.cloud/reference/get_api-chargers-id-site
     def site(charger_id)
       get("/api/chargers/#{charger_id}/site")
         .then { |response| Site.new(response.body) }

@@ -30,6 +30,13 @@ module Easee
       post("/api/chargers/#{charger_id}/pair", query: { pinCode: pin_code })
     end
 
+    # https://developer.easee.cloud/reference/get_api-chargers
+    def chargers
+      get("/api/chargers").then do |response|
+        response.body.map { |data| Charger.new(data) }
+      end
+    end
+
     # https://developer.easee.cloud/reference/get_api-chargers-id-state
     def state(charger_id)
       get("/api/chargers/#{charger_id}/state")
@@ -46,11 +53,13 @@ module Easee
       post("/api/chargers/#{charger_id}/commands/resume_charging")
     end
 
+    # https://developer.easee.cloud/reference/get_api-chargers-id-config
     def configuration(charger_id)
       get("/api/chargers/#{charger_id}/config")
         .then { |response| Configuration.new(response.body) }
     end
 
+    # https://developer.easee.cloud/reference/get_api-chargers-id-site
     def site(charger_id)
       get("/api/chargers/#{charger_id}/site")
         .then { |response| Site.new(response.body) }

@@ -192,6 +192,55 @@ RSpec.describe Easee::Client do
     end
   end
 
+  describe "#chargers" do
+    it "fetches all chargers accessible for the account" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      stub_request(:get, "https://api.easee.cloud/api/chargers")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(
+          status: 200,
+          body: [
+            {
+              id: "EASEE123",
+              name: "John's charger",
+              color: 1,
+              productCode: 1,
+            },
+            {
+              id: "EASEE456",
+              name: "Mary's charger",
+              color: 3,
+              productCode: 100,
+            },
+          ].to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      chargers = client.chargers
+
+      expect(chargers[0]).to have_attributes(
+        id: "EASEE123",
+        name: "John's charger",
+        color: 1,
+        product_code: 1,
+      )
+
+      expect(chargers[1]).to have_attributes(
+        id: "EASEE456",
+        name: "Mary's charger",
+        color: 3,
+        product_code: 100,
+      )
+    end
+  end
+
   describe "#configuration" do
     it "fetches the technical configuration" do
       token_cache = ActiveSupport::Cache::MemoryStore.new

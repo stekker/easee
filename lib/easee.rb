@@ -10,6 +10,7 @@ require_relative "easee/errors"
 require_relative "easee/meter_reading"
 require_relative "easee/site"
 require_relative "easee/state"
+require_relative "easee/charger"
 
 module Easee
 end

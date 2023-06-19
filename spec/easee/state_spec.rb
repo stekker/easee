@@ -11,6 +11,10 @@ RSpec.describe Easee::State do
     it "returns false for all other charger op modes" do
       expect(Easee::State.new(chargerOpMode: 4)).not_to be_charging
     end
+
+    it "does not fail for unknown op modes" do
+      expect(Easee::State.new(chargerOpMode: 7)).not_to be_charging
+    end
   end
 
   describe "#disconnected?" do

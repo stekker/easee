@@ -1,5 +1,7 @@
 module Easee
   class State
+    OP_MODE_UNKNOWN = :unknown
+
     CHARGER_OP_MODES = {
       0 => :offline,
       1 => :disconnected,
@@ -27,6 +29,9 @@ module Easee
 
     private
 
-    def charger_op_mode = CHARGER_OP_MODES.fetch(@data.fetch(:chargerOpMode))
+    def charger_op_mode
+      numeric_op_mode = @data.fetch(:chargerOpMode)
+      CHARGER_OP_MODES.fetch(numeric_op_mode) { OP_MODE_UNKNOWN }
+    end
   end
 end

@@ -1,6 +1,6 @@
 require "timecop"
 require "webmock/rspec"
-require "easee"
+require "stekker_easee"
 
 Dir["spec/support/**/*.rb"].each { |f| require_relative "../#{f}" }
 

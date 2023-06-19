@@ -9,11 +9,13 @@ module Easee
     def building_number = address.fetch(:buildingNumber)
     def zip = address.fetch(:zip)
     def area = address.fetch(:area)
-    def country_id = address.fetch(:country).fetch(:id)
+    def country_id = country[:id]
     def latitude = address.fetch(:latitude)
     def longitude = address.fetch(:longitude)
 
     private
+
+    def country = address.fetch(:country) || {}
 
     def address
       @address ||= @data.fetch(:address)

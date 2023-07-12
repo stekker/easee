@@ -117,7 +117,11 @@ module Easee
         retry
       end
     rescue Faraday::Error => e
-      raise Errors::RequestFailed.new("Request returned status #{e.response_status}", e.response)
+      if e.response_status == 429 # HTTP 429 TooManyRequests
+        raise Errors::RateLimitExceeded.new("Rate limit exceeded", e.response)
+      else
+        raise Errors::RequestFailed.new("Request returned status #{e.response_status}", e.response)
+      end
     end
 
     def access_token

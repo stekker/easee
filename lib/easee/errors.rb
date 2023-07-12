@@ -1,6 +1,8 @@
 module Easee
   module Errors
-    class Base < ::StandardError; end
+    class Base < ::StandardError
+      def retryable? = false
+    end
 
     class RequestFailed < Base
       attr_reader :response
@@ -9,6 +11,10 @@ module Easee
         @response = response
         super(message)
       end
+    end
+
+    class RateLimitExceeded < RequestFailed
+      def retryable? = true
     end
   end
 end

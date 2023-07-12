@@ -349,6 +349,23 @@ RSpec.describe Easee::Client do
 
       expect(state.meter_reading).to have_attributes(reading_kwh: 23.67, timestamp: now)
     end
+
+    it "handles 429 HTTP errors" do
+      stub_request(:get, "https://api.easee.cloud/api/chargers/C123/state")
+        .to_return(status: 429)
+
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      expect { client.state("C123") }.to raise_error(Easee::Errors::RateLimitExceeded) do |error|
+        expect(error).to be_retryable
+      end
+    end
   end
 
   describe "#pause_charging" do

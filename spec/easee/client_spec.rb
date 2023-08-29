@@ -332,7 +332,12 @@ RSpec.describe Easee::Client do
         .with(headers: { "Authorization" => "Bearer T123" })
         .to_return(
           status: 200,
-          body: { chargerOpMode: 3, lifetimeEnergy: 23.67, isOnline: true }.to_json,
+          body: {
+            chargerOpMode: 3,
+            lifetimeEnergy: 23.67,
+            isOnline: true,
+            latestPulse: "2023-08-29T12:20:09.000Z",
+          }.to_json,
           headers: { "Content-Type": "application/json" },
         )
 
@@ -347,7 +352,11 @@ RSpec.describe Easee::Client do
           online?: true,
         )
 
-      expect(state.meter_reading).to have_attributes(reading_kwh: 23.67, timestamp: now)
+      expect(state.meter_reading)
+        .to have_attributes(
+          reading_kwh: 23.67,
+          timestamp: Time.utc(2023, 8, 29, 12, 20, 9),
+        )
     end
 
     it "handles 429 HTTP errors" do

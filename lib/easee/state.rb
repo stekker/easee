@@ -23,7 +23,7 @@ module Easee
     def meter_reading
       MeterReading.new(
         reading_kwh: @data.fetch(:lifetimeEnergy),
-        timestamp: Time.current,
+        timestamp: Time.zone.parse(@data.fetch(:latestPulse)),
       )
     end
 

@@ -127,8 +127,7 @@ RSpec.describe Easee::Client do
       tokens = { "accessToken" => "T123" }
 
       encryptor = instance_double(Easee::NullEncryptor)
-      allow(encryptor).to receive(:encrypt).and_return("encrypted")
-      allow(encryptor).to receive(:decrypt).and_return(tokens.to_json)
+      allow(encryptor).to receive_messages(encrypt: "encrypted", decrypt: tokens.to_json)
 
       stub_request(:post, "https://api.easee.cloud/api/accounts/login")
         .with(

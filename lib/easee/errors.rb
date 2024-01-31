@@ -4,6 +4,8 @@ module Easee
       def retryable? = false
     end
 
+    class InvalidCredentials < Base; end
+
     class RequestFailed < Base
       attr_reader :response
 
@@ -12,6 +14,8 @@ module Easee
         super(message)
       end
     end
+
+    class Forbidden < Base; end
 
     class RateLimitExceeded < RequestFailed
       def retryable? = true

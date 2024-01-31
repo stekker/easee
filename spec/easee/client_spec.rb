@@ -153,6 +153,35 @@ RSpec.describe Easee::Client do
       expect(encryptor).to have_received(:encrypt).with(tokens.to_json, cipher_options: { deterministic: true })
       expect(encryptor).to have_received(:decrypt).with("encrypted")
     end
+
+    it "raises when the access token could not be obtained" do
+      user_name = "test"
+      password = "wrong"
+
+      stub_request(:post, "https://api.easee.cloud/api/accounts/login")
+        .with(
+          body: { userName: user_name, password: }.to_json,
+        )
+        .to_return(
+          status: 400,
+          body: {
+            errorCode: 100,
+            errorCodeName: "InvalidUserPassword",
+            type: nil,
+            title: "Username or password is invalid",
+            status: 400,
+            detail: "[Empty in production]",
+            instance: nil,
+            extensions: {},
+          }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name:, password:)
+
+      expect { client.pair(charger_id: "123ABC", pin_code: "1234") }
+        .to raise_error(Easee::Errors::InvalidCredentials)
+    end
   end
 
   describe "#pair" do
@@ -373,6 +402,21 @@ RSpec.describe Easee::Client do
       expect { client.state("C123") }.to raise_error(Easee::Errors::RateLimitExceeded) do |error|
         expect(error).to be_retryable
       end
+    end
+
+    it "raises a Forbidden error when we have no access to the charger (anymore)" do
+      stub_request(:get, "https://api.easee.cloud/api/chargers/C123/state")
+        .to_return(status: 403)
+
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      expect { client.state("C123") }.to raise_error(Easee::Errors::Forbidden)
     end
   end
 

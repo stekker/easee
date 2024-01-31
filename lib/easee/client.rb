@@ -118,6 +118,8 @@ module Easee
       end
     rescue Faraday::TooManyRequestsError => e
       raise Errors::RateLimitExceeded.new("Rate limit exceeded", e.response)
+    rescue Faraday::ForbiddenError => e
+      raise Errors::Forbidden, "Access denied to charger"
     rescue Faraday::Error => e
       raise Errors::RequestFailed.new("Request returned status #{e.response_status}", e.response)
     end

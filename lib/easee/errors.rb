@@ -13,6 +13,8 @@ module Easee
       end
     end
 
+    class Forbidden < Base; end
+
     class RateLimitExceeded < RequestFailed
       def retryable? = true
     end

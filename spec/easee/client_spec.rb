@@ -374,6 +374,21 @@ RSpec.describe Easee::Client do
         expect(error).to be_retryable
       end
     end
+
+    it "raises a Forbidden error when we have no access to the charger (anymore)" do
+      stub_request(:get, "https://api.easee.cloud/api/chargers/C123/state")
+        .to_return(status: 403)
+
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      expect { client.state("C123") }.to raise_error(Easee::Errors::Forbidden)
+    end
   end
 
   describe "#pause_charging" do

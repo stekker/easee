@@ -79,13 +79,13 @@ module Easee
       Faraday.new(url: BASE_URL) do |conn|
         conn.request :json
         conn.response :raise_error
+        conn.response :json, content_type: /\bjson$/
       end
     end
 
     def authenticated_connection
       connection.tap do |conn|
         conn.request :authorization, "Bearer", access_token
-        conn.response :json, content_type: /\bjson$/
       end
     end
 
@@ -126,7 +126,7 @@ module Easee
 
     def access_token
       encrypted_tokens = @token_cache.fetch(TOKENS_CACHE_KEY) do
-        @encryptor.encrypt(request_access_token, cipher_options: { deterministic: true })
+        @encryptor.encrypt(request_access_token.to_json, cipher_options: { deterministic: true })
       end
 
       plain_text_tokens = @encryptor.decrypt(encrypted_tokens)
@@ -137,7 +137,7 @@ module Easee
     def refresh_access_token!
       @token_cache.write(
         TOKENS_CACHE_KEY,
-        @encryptor.encrypt(refresh_access_token, cipher_options: { deterministic: true }),
+        @encryptor.encrypt(refresh_access_token.to_json, cipher_options: { deterministic: true }),
         expires_in: 1.day,
       )
     rescue Faraday::Error => e

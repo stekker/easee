@@ -4,6 +4,8 @@ module Easee
       def retryable? = false
     end
 
+    class InvalidCredentials < Base; end
+
     class RequestFailed < Base
       attr_reader :response
 

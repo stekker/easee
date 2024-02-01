@@ -184,6 +184,56 @@ RSpec.describe Easee::Client do
     end
   end
 
+  describe "#login" do
+    it "returns the access token when credentials are valid" do
+      user_name = "easee"
+      password = "money"
+
+      stub_request(:post, "https://api.easee.cloud/api/accounts/login")
+        .with(
+          body: { userName: user_name, password: }.to_json,
+        )
+        .to_return(
+          status: 200,
+          body: { accessToken: "T123" }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name:, password:)
+
+      expect(client.login).to eq("accessToken" => "T123")
+    end
+
+    it "raises InvalidCredentials when the credentials are invalid" do
+      user_name = "test"
+      password = "wrong"
+
+      stub_request(:post, "https://api.easee.cloud/api/accounts/login")
+        .with(
+          body: { userName: user_name, password: }.to_json,
+        )
+        .to_return(
+          status: 400,
+          body: {
+            errorCode: 100,
+            errorCodeName: "InvalidUserPassword",
+            type: nil,
+            title: "Username or password is invalid",
+            status: 400,
+            detail: "[Empty in production]",
+            instance: nil,
+            extensions: {},
+          }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name:, password:)
+
+      expect { client.login }
+        .to raise_error(Easee::Errors::InvalidCredentials)
+    end
+  end
+
   describe "#pair" do
     it "pairs a new charger" do
       token_cache = ActiveSupport::Cache::MemoryStore.new

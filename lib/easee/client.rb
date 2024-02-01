@@ -20,6 +20,13 @@ module Easee
       @encryptor = encryptor
     end
 
+    # https://developer.easee.cloud/reference/post_api-accounts-login
+    def login
+      with_error_handling do
+        request_access_token
+      end
+    end
+
     # https://developer.easee.cloud/reference/post_api-chargers-id-unpair
     def unpair(charger_id:, pin_code:)
       post("/api/chargers/#{charger_id}/unpair", query: { pinCode: pin_code })

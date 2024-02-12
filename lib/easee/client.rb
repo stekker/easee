@@ -128,7 +128,7 @@ module Easee
     rescue Faraday::ForbiddenError => e
       raise Errors::Forbidden, "Access denied to charger"
     rescue Faraday::Error => e
-      if e.response_status == 400 && e.response.dig(:body, "errorCode") == 100
+      if e.response_status == 400 && [100, 727].include?(e.response.dig(:body, "errorCode"))
         raise Errors::InvalidCredentials, "Invalid username or password"
       end
 

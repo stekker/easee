@@ -53,6 +53,11 @@ module Easee
       post("/api/chargers/#{charger_id}/commands/resume_charging")
     end
 
+    # https://developer.easee.com/reference/post_api-chargers-chargerid-commands-poll-lifetimeenergy
+    def poll_lifetime_energy(charger_id)
+      post("/api/chargers/#{charger_id}/commands/poll_lifetimeenergy")
+    end
+
     # https://developer.easee.cloud/reference/get_api-chargers-id-config
     def configuration(charger_id)
       get("/api/chargers/#{charger_id}/config")

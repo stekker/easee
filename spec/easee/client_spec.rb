@@ -506,6 +506,26 @@ RSpec.describe Easee::Client do
     end
   end
 
+  describe "#poll_lifetime_energy" do
+    it "sends a poll_lifetimeenergy command" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      stub = stub_request(:post, "https://api.easee.cloud/api/chargers/C123/commands/poll_lifetimeenergy")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(status: 200, body: "")
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      client.poll_lifetime_energy("C123")
+
+      expect(stub).to have_been_requested
+    end
+  end
+
   describe "#inspect" do
     it "does not include the user name and password" do
       token_cache = ActiveSupport::Cache::MemoryStore.new

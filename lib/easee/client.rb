@@ -91,6 +91,7 @@ module Easee
       Faraday.new(url: BASE_URL) do |conn|
         conn.request :json
         conn.response :raise_error
+        conn.use AmazonGwMiddleware
         conn.response :json, content_type: /\bjson$/
       end
     end

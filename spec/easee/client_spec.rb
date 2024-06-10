@@ -232,6 +232,35 @@ RSpec.describe Easee::Client do
       expect { client.login }
         .to raise_error(Easee::Errors::InvalidCredentials)
     end
+
+    it "raises Forbidden errors when the request is rerouted with X-Amzn-Errortype: ForbiddenException" do
+      user_name = "test"
+      password = "old"
+
+      stub_request(:post, "https://api.easee.cloud/api/accounts/login")
+        .with(
+          body: { userName: user_name, password: }.to_json,
+        )
+        .to_return(
+          status: 301,
+          headers: {
+            Date: "Fri, 07 Jun 2024 07:30:02 GMT",
+            "Content-Type": "application/json",
+            "Content-Length": "0",
+            Connection: "keep-alive",
+            "X-Amzn-Requestid": "aaa0a000-000a-0000-a0a0-00000a00aa00",
+            "X-Amzn-Errortype": "ForbiddenException",
+            "X-Amz-Apigw-Id": "A_AAAAa0aaAAAaa=",
+            "X-Easee-Key": "a00a0000-0a0a-0a0a-aa00-0a0000a0a0a0",
+            Location: "https://blackhole.easee.com",
+          },
+        )
+
+      client = Easee::Client.new(user_name:, password:)
+
+      expect { client.login }
+        .to raise_error(Easee::Errors::Forbidden)
+    end
   end
 
   describe "#pair" do

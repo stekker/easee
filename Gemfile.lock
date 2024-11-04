@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    stekker_easee (1.0.1)
+    stekker_easee (1.0.2)
       activemodel
       activesupport
       faraday

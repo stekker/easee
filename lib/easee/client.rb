@@ -65,6 +65,12 @@ module Easee
       post("/api/chargers/#{charger_id}/commands/set_dynamic_charger_current", body: { amps: current })
     end
 
+    # https://developer.easee.com/reference/chargers_getongoingsessiondetails
+    def ongoing_session(charger_id)
+      get("/api/chargers/#{charger_id}/sessions/ongoing")
+        .then { |response| Session.new(response.body) }
+    end
+
     # https://developer.easee.cloud/reference/get_api-chargers-id-config
     def configuration(charger_id)
       get("/api/chargers/#{charger_id}/config")

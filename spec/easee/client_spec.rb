@@ -535,6 +535,27 @@ RSpec.describe Easee::Client do
     end
   end
 
+  describe "#set_dynamic_charger_current" do
+    it "sends a set_dynamic_charger_current command" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      stub_request(:post, "https://api.easee.cloud/api/chargers/C123/commands/set_dynamic_charger_current")
+        .with(
+          headers: { "Authorization" => "Bearer T123" },
+          body: { amps: 10 }.to_json,
+        )
+        .to_return(status: 200, body: "")
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      expect { client.set_dynamic_charger_current("C123", current: 10) }.not_to raise_error
+    end
+  end
+
   describe "#inspect" do
     it "does not include the user name and password" do
       token_cache = ActiveSupport::Cache::MemoryStore.new

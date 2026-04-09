@@ -30,6 +30,8 @@ module Easee
 
     def session_energy = @data.fetch(:sessionEnergy).to_f
 
+    def dynamic_charger_current = @data.fetch(:dynamicChargerCurrent).to_f
+
     def meter_reading
       MeterReading.new(
         reading_kwh: @data.fetch(:lifetimeEnergy),

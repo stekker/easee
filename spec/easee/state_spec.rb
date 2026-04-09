@@ -59,6 +59,12 @@ RSpec.describe Easee::State do
     end
   end
 
+  describe "#dynamic_charger_current" do
+    it "returns the dynamic charger current as a float" do
+      expect(Easee::State.new(dynamicChargerCurrent: 16.0).dynamic_charger_current).to eq(16.0)
+    end
+  end
+
   describe "#online?" do
     it "returns true when the charger is online" do
       expect(Easee::State.new(isOnline: true)).to be_online

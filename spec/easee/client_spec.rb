@@ -556,6 +556,33 @@ RSpec.describe Easee::Client do
     end
   end
 
+  describe "#ongoing_session" do
+    it "fetches the ongoing session for a charger" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      stub_request(:get, "https://api.easee.cloud/api/chargers/C123/sessions/ongoing")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(
+          status: 200,
+          body: {
+            id: 12345,
+            kiloWattHours: 3.42,
+          }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      session = client.ongoing_session("C123")
+
+      expect(session).to have_attributes(id: 12345, energy: 3.42)
+    end
+  end
+
   describe "#inspect" do
     it "does not include the user name and password" do
       token_cache = ActiveSupport::Cache::MemoryStore.new

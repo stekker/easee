@@ -27,6 +27,38 @@ RSpec.describe Easee::State do
     end
   end
 
+  describe "#awaiting_start?" do
+    it "returns true when the charger op mode is :awaiting_start" do
+      expect(Easee::State.new(chargerOpMode: 2)).to be_awaiting_start
+    end
+
+    it "returns false when charging" do
+      expect(Easee::State.new(chargerOpMode: 3)).not_to be_awaiting_start
+    end
+  end
+
+  describe "#charger_op_mode" do
+    it "returns the symbolic op mode" do
+      expect(Easee::State.new(chargerOpMode: 3).charger_op_mode).to eq(:charging)
+    end
+
+    it "returns :unknown for unmapped op modes" do
+      expect(Easee::State.new(chargerOpMode: 99).charger_op_mode).to eq(:unknown)
+    end
+  end
+
+  describe "#total_power" do
+    it "returns the total charging power as a float" do
+      expect(Easee::State.new(totalPower: 7.4).total_power).to eq(7.4)
+    end
+  end
+
+  describe "#session_energy" do
+    it "returns the session energy as a float" do
+      expect(Easee::State.new(sessionEnergy: 12.34).session_energy).to eq(12.34)
+    end
+  end
+
   describe "#online?" do
     it "returns true when the charger is online" do
       expect(Easee::State.new(isOnline: true)).to be_online

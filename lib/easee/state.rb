@@ -18,20 +18,23 @@ module Easee
 
     def charging? = charger_op_mode == :charging
     def disconnected? = charger_op_mode == :disconnected
+    def awaiting_start? = charger_op_mode == :awaiting_start
     def online? = @data.fetch(:isOnline)
+
+    def charger_op_mode
+      numeric_op_mode = @data.fetch(:chargerOpMode)
+      CHARGER_OP_MODES.fetch(numeric_op_mode) { OP_MODE_UNKNOWN }
+    end
+
+    def total_power = @data.fetch(:totalPower).to_f
+
+    def session_energy = @data.fetch(:sessionEnergy).to_f
 
     def meter_reading
       MeterReading.new(
         reading_kwh: @data.fetch(:lifetimeEnergy),
         timestamp: Time.zone.parse(@data.fetch(:latestPulse)),
       )
-    end
-
-    private
-
-    def charger_op_mode
-      numeric_op_mode = @data.fetch(:chargerOpMode)
-      CHARGER_OP_MODES.fetch(numeric_op_mode) { OP_MODE_UNKNOWN }
     end
   end
 end

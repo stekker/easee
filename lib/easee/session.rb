@@ -4,8 +4,8 @@ module Easee
       @data = data.symbolize_keys
     end
 
-    def id = @data.fetch(:id)
+    def id = @data.fetch(:sessionId)
 
-    def energy = @data.fetch(:kiloWattHours).to_f
+    def energy = @data.fetch(:sessionEnergy).to_f
   end
 end

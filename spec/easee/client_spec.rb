@@ -569,8 +569,8 @@ RSpec.describe Easee::Client do
         .to_return(
           status: 200,
           body: {
-            id: 12345,
-            kiloWattHours: 3.42,
+            sessionId: 12345,
+            sessionEnergy: 3.42,
           }.to_json,
           headers: { "Content-Type": "application/json" },
         )

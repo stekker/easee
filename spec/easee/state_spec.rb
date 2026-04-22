@@ -13,7 +13,7 @@ RSpec.describe Easee::State do
     end
 
     it "does not fail for unknown op modes" do
-      expect(Easee::State.new(chargerOpMode: 7)).not_to be_charging
+      expect(Easee::State.new(chargerOpMode: 99)).not_to be_charging
     end
   end
 
@@ -40,6 +40,14 @@ RSpec.describe Easee::State do
   describe "#charger_op_mode" do
     it "returns the symbolic op mode" do
       expect(Easee::State.new(chargerOpMode: 3).charger_op_mode).to eq(:charging)
+    end
+
+    it "maps awaiting authentication (7)" do
+      expect(Easee::State.new(chargerOpMode: 7).charger_op_mode).to eq(:awaiting_authentication)
+    end
+
+    it "maps de-authenticating (8)" do
+      expect(Easee::State.new(chargerOpMode: 8).charger_op_mode).to eq(:de_authenticating)
     end
 
     it "returns :unknown for unmapped op modes" do

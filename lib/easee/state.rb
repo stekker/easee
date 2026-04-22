@@ -10,6 +10,8 @@ module Easee
       4 => :completed,
       5 => :error,
       6 => :ready_to_charge,
+      7 => :awaiting_authentication,
+      8 => :de_authenticating,
     }.freeze
 
     def initialize(data)

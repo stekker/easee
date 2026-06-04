@@ -89,7 +89,46 @@ RSpec.describe Easee::Client do
       expect { client.pair(charger_id: "123ABC", pin_code: "1234") }.to raise_error(Easee::Errors::RequestFailed)
     end
 
-    it "fails when the acess token could not be refreshed" do
+    it "logs in with username and password when the refresh token is rejected" do
+      user_name = "easee"
+      password = "money"
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      current_tokens = { "accessToken" => "T123", "refreshToken" => "R456" }
+      token_cache.write(Easee::Client::TOKENS_CACHE_KEY, current_tokens.to_json)
+      new_tokens = { "accessToken" => "T999" }
+
+      stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
+        .to_return(
+          { status: 401, body: "Invalid token" },
+          { status: 200, body: "" },
+        )
+
+      stub_request(:post, "https://api.easee.cloud/api/accounts/refresh_token")
+        .to_return(
+          status: 401,
+          body: { errorCode: 104, errorCodeName: "InvalidRefreshToken" }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      login_request = stub_request(:post, "https://api.easee.cloud/api/accounts/login")
+        .with(body: { userName: user_name, password: }.to_json)
+        .to_return(
+          status: 200,
+          body: new_tokens.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name:, password:, token_cache:)
+
+      expect { client.pair(charger_id: "123ABC", pin_code: "1234") }
+        .to change { token_cache.fetch(Easee::Client::TOKENS_CACHE_KEY) }
+        .from(current_tokens.to_json)
+        .to(new_tokens.to_json)
+
+      expect(login_request).to have_been_requested
+    end
+
+    it "raises InvalidCredentials when the refresh fails and re-login is rejected" do
       user_name = "easee"
       password = "money"
       token_cache = ActiveSupport::Cache::MemoryStore.new
@@ -97,27 +136,26 @@ RSpec.describe Easee::Client do
       token_cache.write(Easee::Client::TOKENS_CACHE_KEY, current_tokens.to_json)
 
       stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
-        .to_return(
-          status: 401, body: "Invalid token",
-        )
+        .to_return(status: 401, body: "Invalid token")
 
       stub_request(:post, "https://api.easee.cloud/api/accounts/refresh_token")
-        .with(
-          body: { accessToken: "T123", refreshToken: "R456" }.to_json,
-        )
         .to_return(
           status: 401,
-          body: {
-            errorCode: 104,
-            errorCodeName: "InvalidRefreshToken",
-          }.to_json,
+          body: { errorCode: 104, errorCodeName: "InvalidRefreshToken" }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      stub_request(:post, "https://api.easee.cloud/api/accounts/login")
+        .to_return(
+          status: 400,
+          body: { errorCode: 100, errorCodeName: "InvalidUserPassword" }.to_json,
           headers: { "Content-Type": "application/json" },
         )
 
       client = Easee::Client.new(user_name:, password:, token_cache:)
 
       expect { client.pair(charger_id: "123ABC", pin_code: "1234") }
-        .to raise_error(Easee::Errors::RequestFailed)
+        .to raise_error(Easee::Errors::InvalidCredentials)
     end
 
     it "uses the encryptor to encrypt the tokens" do

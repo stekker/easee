@@ -123,28 +123,22 @@ module Easee
     end
 
     def with_error_handling
-      token_refreshed ||= false
+      reauthenticated ||= false
 
       yield
     rescue Faraday::UnauthorizedError => e
-      if token_refreshed
-        raise Errors::RequestFailed.new("Request returned status #{e.response_status}", e.response)
-      else
-        refresh_access_token!
-        token_refreshed = true
+      raise request_failed(e) if reauthenticated
 
-        retry
-      end
+      reauthenticate!
+      reauthenticated = true
+
+      retry
     rescue Faraday::TooManyRequestsError => e
       raise Errors::RateLimitExceeded.new("Rate limit exceeded", e.response)
     rescue Faraday::ForbiddenError => e
       raise Errors::Forbidden, "Access denied to charger"
     rescue Faraday::Error => e
-      if e.response_status == 400 && [100, 727].include?(e.response.dig(:body, "errorCode"))
-        raise Errors::InvalidCredentials, "Invalid username or password"
-      end
-
-      raise Errors::RequestFailed.new("Request returned status #{e.response_status}", e.response)
+      raise_credentials_or_request_error(e)
     end
 
     def access_token
@@ -157,14 +151,40 @@ module Easee
       JSON.parse(plain_text_tokens).fetch("accessToken")
     end
 
+    def reauthenticate!
+      refresh_access_token!
+    rescue Faraday::Error
+      log_in!
+    end
+
     def refresh_access_token!
+      store_tokens(refresh_access_token)
+    end
+
+    def log_in!
+      store_tokens(request_access_token)
+    rescue Faraday::Error => e
+      raise_credentials_or_request_error(e)
+    end
+
+    def store_tokens(tokens)
       @token_cache.write(
         TOKENS_CACHE_KEY,
-        @encryptor.encrypt(refresh_access_token.to_json, cipher_options: { deterministic: true }),
+        @encryptor.encrypt(tokens.to_json, cipher_options: { deterministic: true }),
         expires_in: 1.day,
       )
-    rescue Faraday::Error => e
-      raise Errors::RequestFailed.new("Request returned status #{e.response_status}", e.response)
+    end
+
+    def raise_credentials_or_request_error(error)
+      if error.response_status == 400 && [100, 727].include?(error.response.dig(:body, "errorCode"))
+        raise Errors::InvalidCredentials, "Invalid username or password"
+      end
+
+      raise request_failed(error)
+    end
+
+    def request_failed(error)
+      Errors::RequestFailed.new("Request returned status #{error.response_status}", error.response)
     end
 
     # https://developer.easee.cloud/reference/post_api-accounts-login

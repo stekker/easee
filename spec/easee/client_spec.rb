@@ -317,6 +317,56 @@ RSpec.describe Easee::Client do
 
       expect { client.pair(charger_id: "123ABC", pin_code: "1234") }.not_to raise_error
     end
+
+    it "raises InvalidPinCode when Easee rejects the PIN (errorCode 193)" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=WRONG")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(
+          status: 400,
+          body: {
+            errorCode: 193,
+            errorCodeName: "NotPossibleToGrantAccessWithPinCode",
+            title: "Not possible to grant access with pin code",
+          }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      expect { client.pair(charger_id: "123ABC", pin_code: "WRONG") }
+        .to raise_error(Easee::Errors::InvalidPinCode)
+    end
+
+    it "raises ChargerNotFound when the charger is unknown (errorCode 400)" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      stub_request(:post, "https://api.easee.cloud/api/chargers/UNKNOWN/pair?pinCode=1234")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(
+          status: 404,
+          body: {
+            errorCode: 400,
+            errorCodeName: "ChargerNotFound",
+            title: "Charger not found",
+          }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      expect { client.pair(charger_id: "UNKNOWN", pin_code: "1234") }
+        .to raise_error(Easee::Errors::ChargerNotFound)
+    end
   end
 
   describe "#unpair" do

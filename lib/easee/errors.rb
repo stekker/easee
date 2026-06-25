@@ -17,6 +17,10 @@ module Easee
 
     class Forbidden < Base; end
 
+    class InvalidPinCode < RequestFailed; end
+
+    class ChargerNotFound < RequestFailed; end
+
     class RateLimitExceeded < RequestFailed
       def retryable? = true
     end

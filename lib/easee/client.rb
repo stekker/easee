@@ -176,14 +176,14 @@ module Easee
     end
 
     def raise_credentials_or_request_error(error)
-      body_error_code = error.response&.dig(:body, "errorCode")
-
-      if error.response_status == 400 && [100, 727].include?(body_error_code)
+      case error.response&.dig(:body, "errorCode")
+      when *Errors::InvalidCredentials::CODES
         raise Errors::InvalidCredentials, "Invalid username or password"
+      when Errors::InvalidPinCode::CODE
+        raise Errors::InvalidPinCode.new("PIN code rejected", error.response)
+      when Errors::ChargerNotFound::CODE
+        raise Errors::ChargerNotFound.new("Charger not found", error.response)
       end
-
-      raise Errors::InvalidPinCode.new("PIN code rejected", error.response) if body_error_code == 193
-      raise Errors::ChargerNotFound.new("Charger not found", error.response) if body_error_code == 400
 
       raise request_failed(error)
     end

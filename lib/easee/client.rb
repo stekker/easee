@@ -44,6 +44,12 @@ module Easee
       end
     end
 
+    # https://developer.easee.cloud/reference/get_api-chargers-id
+    def charger(charger_id)
+      get("/api/chargers/#{charger_id}")
+        .then { |response| Charger.new(response.body) }
+    end
+
     # https://developer.easee.cloud/reference/get_api-chargers-id-state
     def state(charger_id)
       get("/api/chargers/#{charger_id}/state")

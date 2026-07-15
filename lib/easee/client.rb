@@ -189,9 +189,19 @@ module Easee
         raise Errors::InvalidPinCode.new("PIN code rejected", error.response)
       when Errors::ChargerNotFound::CODE
         raise Errors::ChargerNotFound.new("Charger not found", error.response)
+      when Errors::PAIRING_ERROR_CODE
+        raise_pairing_result_error(error)
       end
 
       raise request_failed(error)
+    end
+
+    def raise_pairing_result_error(error)
+      title = error.response&.dig(:body, "title")
+      error_class = Errors::PAIRING_RESULT_ERRORS.find { |klass| klass::PAIRING_RESULT_TITLES.include?(title) }
+      return unless error_class
+
+      raise error_class.new("Pairing rejected: #{title}", error.response)
     end
 
     def request_failed(error)

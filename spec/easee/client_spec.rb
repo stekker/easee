@@ -367,6 +367,131 @@ RSpec.describe Easee::Client do
       expect { client.pair(charger_id: "UNKNOWN", pin_code: "1234") }
         .to raise_error(Easee::Errors::ChargerNotFound)
     end
+
+    it "raises InvalidPinCode on a PairingError with title IncorrectPIN" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=WRONG")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(
+          status: 400,
+          body: {
+            errorCode: 123,
+            errorCodeName: "PairingError",
+            title: "IncorrectPIN",
+          }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      expect { client.pair(charger_id: "123ABC", pin_code: "WRONG") }
+        .to raise_error(Easee::Errors::InvalidPinCode)
+    end
+
+    it "raises TooManyAttempts on a PairingError with title TooManyAttempts" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(
+          status: 400,
+          body: {
+            errorCode: 123,
+            errorCodeName: "PairingError",
+            title: "TooManyAttempts",
+          }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      expect { client.pair(charger_id: "123ABC", pin_code: "1234") }
+        .to raise_error(Easee::Errors::TooManyAttempts)
+    end
+
+    it "raises AlreadyPaired on a PairingError with title AlreadyPairedWithPartner" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(
+          status: 400,
+          body: {
+            errorCode: 123,
+            errorCodeName: "PairingError",
+            title: "AlreadyPairedWithPartner",
+          }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      expect { client.pair(charger_id: "123ABC", pin_code: "1234") }
+        .to raise_error(Easee::Errors::AlreadyPaired)
+    end
+
+    it "raises AlreadyPaired on a PairingError with title AlreadyPairedWithUser" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(
+          status: 400,
+          body: {
+            errorCode: 123,
+            errorCodeName: "PairingError",
+            title: "AlreadyPairedWithUser",
+          }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      expect { client.pair(charger_id: "123ABC", pin_code: "1234") }
+        .to raise_error(Easee::Errors::AlreadyPaired)
+    end
+
+    it "raises the generic RequestFailed on a PairingError with an unknown title" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      stub_request(:post, "https://api.easee.cloud/api/chargers/123ABC/pair?pinCode=1234")
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(
+          status: 400,
+          body: {
+            errorCode: 123,
+            errorCodeName: "PairingError",
+            title: "SomethingElse",
+          }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      expect { client.pair(charger_id: "123ABC", pin_code: "1234") }
+        .to raise_error(Easee::Errors::RequestFailed)
+    end
   end
 
   describe "#unpair" do

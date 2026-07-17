@@ -828,6 +828,83 @@ RSpec.describe Easee::Client do
     end
   end
 
+  describe "#sessions" do
+    it "fetches the completed sessions for a charger in the given time range" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      from = Time.zone.parse("2026-01-01T00:00:00Z")
+      to = Time.zone.parse("2026-07-17T00:00:00Z")
+
+      stub_request(
+        :get,
+        "https://api.easee.cloud/api/sessions/charger/EH98AAGY/sessions/2026-01-01T00:00:00Z/2026-07-17T00:00:00Z",
+      )
+        .with(headers: { "Authorization" => "Bearer T123" })
+        .to_return(
+          status: 200,
+          body: [
+            {
+              id: 387,
+              chargerId: "EH98AAGY",
+              carConnected: "2026-01-02T19:23:23Z",
+              carDisconnected: "2026-01-03T11:57:00Z",
+              kiloWattHours: 29.155331,
+              isComplete: true,
+            },
+            {
+              id: 388,
+              chargerId: "EH98AAGY",
+              carConnected: "2026-01-08T17:15:48Z",
+              carDisconnected: nil,
+              kiloWattHours: 0.0,
+              isComplete: false,
+            },
+          ].to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      sessions = client.sessions("EH98AAGY", from:, to:)
+
+      expect(sessions.map(&:id)).to eq [387, 388]
+      expect(sessions.first).to have_attributes(
+        charger_id: "EH98AAGY",
+        car_connected: Time.zone.parse("2026-01-02T19:23:23Z"),
+        car_disconnected: Time.zone.parse("2026-01-03T11:57:00Z"),
+        energy_kwh: 29.155331,
+        complete?: true,
+      )
+      expect(sessions.last).to have_attributes(car_disconnected: nil, complete?: false)
+    end
+
+    it "converts non-UTC timestamps to UTC before sending them to Easee" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      from = Time.new(2026, 1, 1, 1, 0, 0, "+01:00")
+      to = Time.new(2026, 1, 2, 3, 0, 0, "+02:00")
+
+      request = stub_request(
+        :get,
+        "https://api.easee.cloud/api/sessions/charger/EH98AAGY/sessions/2026-01-01T00:00:00Z/2026-01-02T01:00:00Z",
+      ).to_return(status: 200, body: "[]", headers: { "Content-Type": "application/json" })
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      client.sessions("EH98AAGY", from:, to:)
+
+      expect(request).to have_been_requested
+    end
+  end
+
   describe "#inspect" do
     it "does not include the user name and password" do
       token_cache = ActiveSupport::Cache::MemoryStore.new

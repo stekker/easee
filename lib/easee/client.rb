@@ -77,6 +77,12 @@ module Easee
         .then { |response| Session.new(response.body) }
     end
 
+    # https://developer.easee.com/reference/chargingsessionscharger_getchargersessionsbycharger
+    def sessions(charger_id, from:, to:)
+      path = "/api/sessions/charger/#{charger_id}/sessions/#{format_time(from)}/#{format_time(to)}"
+      get(path).then { |response| response.body.map { |session| ArchivedSession.new(session) } }
+    end
+
     # https://developer.easee.cloud/reference/get_api-chargers-id-config
     def configuration(charger_id)
       get("/api/chargers/#{charger_id}/config")
@@ -112,6 +118,10 @@ module Easee
       connection.tap do |conn|
         conn.request :authorization, "Bearer", access_token
       end
+    end
+
+    def format_time(time)
+      time.getutc.iso8601
     end
 
     def get(endpoint, query = {})

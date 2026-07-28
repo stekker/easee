@@ -905,6 +905,93 @@ RSpec.describe Easee::Client do
     end
   end
 
+  describe "#meter_readings" do
+    it "fetches the charger's cumulative energy meter readings in the given time range" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      from = Time.zone.parse("2026-01-02T19:00:00Z")
+      to = Time.zone.parse("2026-01-03T12:00:00Z")
+
+      stub_request(:get, "https://api.easee.cloud/api/chargers/lifetime-energy/EH98AAGY/all")
+        .with(
+          headers: { "Authorization" => "Bearer T123" },
+          query: { from: "2026-01-02T19:00:00Z", to: "2026-01-03T12:00:00Z" },
+        )
+        .to_return(
+          status: 200,
+          body: {
+            measurements: [
+              { value: 1000.0, measuredAt: "2026-01-02T20:00:00Z" },
+              { value: 1029.15, measuredAt: "2026-01-03T11:00:00Z" },
+            ],
+          }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      readings = client.meter_readings("EH98AAGY", from:, to:)
+
+      expect(readings.map(&:reading_kwh)).to eq [1000.0, 1029.15]
+      expect(readings.first).to have_attributes(
+        reading_kwh: 1000.0,
+        timestamp: Time.zone.parse("2026-01-02T20:00:00Z"),
+      )
+    end
+
+    it "returns an empty list when Easee has no measurements for the period" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      from = Time.zone.parse("2026-01-01T00:00:00Z")
+      to = Time.zone.parse("2026-01-02T00:00:00Z")
+
+      stub_request(:get, "https://api.easee.cloud/api/chargers/lifetime-energy/EH98AAGY/all")
+        .with(query: { from: "2026-01-01T00:00:00Z", to: "2026-01-02T00:00:00Z" })
+        .to_return(
+          status: 200,
+          body: { measurements: nil }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      expect(client.meter_readings("EH98AAGY", from:, to:)).to eq []
+    end
+
+    it "converts non-UTC timestamps to UTC before sending them to Easee" do
+      token_cache = ActiveSupport::Cache::MemoryStore.new
+      token_cache.write(
+        Easee::Client::TOKENS_CACHE_KEY,
+        { "accessToken" => "T123" }.to_json,
+      )
+
+      from = Time.new(2026, 1, 1, 1, 0, 0, "+01:00")
+      to = Time.new(2026, 1, 2, 3, 0, 0, "+02:00")
+
+      request = stub_request(:get, "https://api.easee.cloud/api/chargers/lifetime-energy/EH98AAGY/all")
+        .with(query: { from: "2026-01-01T00:00:00Z", to: "2026-01-02T01:00:00Z" })
+        .to_return(
+          status: 200,
+          body: { measurements: [] }.to_json,
+          headers: { "Content-Type": "application/json" },
+        )
+
+      client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
+
+      client.meter_readings("EH98AAGY", from:, to:)
+
+      expect(request).to have_been_requested
+    end
+  end
+
   describe "#inspect" do
     it "does not include the user name and password" do
       token_cache = ActiveSupport::Cache::MemoryStore.new

@@ -83,6 +83,14 @@ module Easee
       get(path).then { |response| response.body.map { |session| ArchivedSession.new(session) } }
     end
 
+    # https://developer.easee.com/reference/lifetimeenergyreporting_getchargerbyid
+    def meter_readings(charger_id, from:, to:)
+      path = "/api/chargers/lifetime-energy/#{charger_id}/all"
+      get(path, { from: format_time(from), to: format_time(to) })
+        .then { |response| Array(response.body["measurements"]) }
+        .map { |measurement| build_meter_reading(measurement) }
+    end
+
     # https://developer.easee.cloud/reference/get_api-chargers-id-config
     def configuration(charger_id)
       get("/api/chargers/#{charger_id}/config")
@@ -122,6 +130,13 @@ module Easee
 
     def format_time(time)
       time.getutc.iso8601
+    end
+
+    def build_meter_reading(measurement)
+      MeterReading.new(
+        reading_kwh: measurement.fetch("value").to_f,
+        timestamp: Time.zone.parse(measurement.fetch("measuredAt")),
+      )
     end
 
     def get(endpoint, query = {})

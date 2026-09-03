@@ -66,10 +66,11 @@ module Easee
     def dynamic_charger_current = @data.fetch(:dynamicChargerCurrent).to_f
 
     def meter_reading
-      MeterReading.new(
-        reading_kwh: @data.fetch(:lifetimeEnergy),
-        timestamp: Time.zone.parse(@data.fetch(:latestPulse)),
-      )
+      reading_kwh = @data[:lifetimeEnergy]
+      latest_pulse = @data[:latestPulse]
+      return if reading_kwh.nil? || latest_pulse.nil?
+
+      MeterReading.new(reading_kwh:, timestamp: Time.zone.parse(latest_pulse))
     end
   end
 end

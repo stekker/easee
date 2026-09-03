@@ -92,6 +92,14 @@ RSpec.describe Easee::State do
 
       expect(state.meter_reading).to have_attributes(reading_kwh: 23.67, timestamp: now)
     end
+
+    it "returns nothing when the charger reported no lifetime energy" do
+      expect(Easee::State.new(chargerOpMode: 3).meter_reading).to be_nil
+    end
+
+    it "returns nothing when the lifetime energy has no timestamp" do
+      expect(Easee::State.new(lifetimeEnergy: 23.67, latestPulse: nil).meter_reading).to be_nil
+    end
   end
 
   describe ".from_observations" do
@@ -139,6 +147,12 @@ RSpec.describe Easee::State do
       )
 
       expect(state).to have_attributes(disconnected?: true, online?: false)
+    end
+
+    it "returns no meter reading when lifetime energy is absent from the observations" do
+      state = Easee::State.from_observations([{ "id" => 109, "value" => 3 }])
+
+      expect(state.meter_reading).to be_nil
     end
   end
 end

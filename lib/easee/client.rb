@@ -50,10 +50,10 @@ module Easee
         .then { |response| Charger.new(response.body) }
     end
 
-    # https://developer.easee.cloud/reference/get_api-chargers-id-state
+    # https://developer.easee.com/reference/getobservations
     def state(charger_id)
-      get("/api/chargers/#{charger_id}/state")
-        .then { |response| State.new(response.body) }
+      get("/state/#{charger_id}/observations", { ids: State::OBSERVATION_IDS.values.join(",") })
+        .then { |response| State.from_observations(response.body["observations"]) }
     end
 
     # https://developer.easee.cloud/reference/post_api-chargers-id-commands-pause-charging

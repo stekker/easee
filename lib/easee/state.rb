@@ -14,6 +14,37 @@ module Easee
       8 => :de_authenticating,
     }.freeze
 
+    # https://developer.easee.com/docs/charger-observation-ids
+    OBSERVATION_IDS = {
+      chargerOpMode: 109,
+      isOnline: 250,
+      totalPower: 120,
+      sessionEnergy: 121,
+      dynamicChargerCurrent: 48,
+      lifetimeEnergy: 124,
+    }.freeze
+
+    def self.from_observations(observations)
+      by_id = Array(observations).each_with_object({}) do |observation, result|
+        observation = observation.symbolize_keys
+        result[observation.fetch(:id)] = observation
+      end
+
+      new(
+        chargerOpMode: by_id.dig(OBSERVATION_IDS.fetch(:chargerOpMode), :value)&.to_i,
+        isOnline: coerce_boolean(by_id.dig(OBSERVATION_IDS.fetch(:isOnline), :value)),
+        totalPower: by_id.dig(OBSERVATION_IDS.fetch(:totalPower), :value),
+        sessionEnergy: by_id.dig(OBSERVATION_IDS.fetch(:sessionEnergy), :value),
+        dynamicChargerCurrent: by_id.dig(OBSERVATION_IDS.fetch(:dynamicChargerCurrent), :value),
+        lifetimeEnergy: by_id.dig(OBSERVATION_IDS.fetch(:lifetimeEnergy), :value)&.to_f,
+        latestPulse: by_id.dig(OBSERVATION_IDS.fetch(:lifetimeEnergy), :timestamp),
+      )
+    end
+
+    def self.coerce_boolean(value)
+      [true, "true", 1, "1"].include?(value)
+    end
+
     def initialize(data)
       @data = data.symbolize_keys
     end

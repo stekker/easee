@@ -670,7 +670,7 @@ RSpec.describe Easee::Client do
   end
 
   describe "#state" do
-    it "fetches the state for a charger" do
+    it "fetches the state for a charger from its observations" do
       now = Time.zone.local(2023, 3, 27, 15, 21)
       Timecop.freeze(now)
 
@@ -680,15 +680,19 @@ RSpec.describe Easee::Client do
         { "accessToken" => "T123" }.to_json,
       )
 
-      stub_request(:get, "https://api.easee.cloud/api/chargers/C123/state")
-        .with(headers: { "Authorization" => "Bearer T123" })
+      stub_request(:get, "https://api.easee.cloud/state/C123/observations")
+        .with(query: { ids: "109,250,120,121,48,124" }, headers: { "Authorization" => "Bearer T123" })
         .to_return(
           status: 200,
           body: {
-            chargerOpMode: 3,
-            lifetimeEnergy: 23.67,
-            isOnline: true,
-            latestPulse: "2023-08-29T12:20:09.000Z",
+            observations: [
+              { id: 109, timestamp: "2023-08-29T12:20:09.000Z", dataType: 4, value: 3 },
+              { id: 250, timestamp: "2023-08-29T12:20:09.000Z", dataType: 2, value: true },
+              { id: 120, timestamp: "2023-08-29T12:20:09.000Z", dataType: 3, value: 7.4 },
+              { id: 121, timestamp: "2023-08-29T12:20:09.000Z", dataType: 3, value: 12.34 },
+              { id: 48, timestamp: "2023-08-29T12:20:09.000Z", dataType: 3, value: 16.0 },
+              { id: 124, timestamp: "2023-08-29T12:20:09.000Z", dataType: 3, value: 23.67 },
+            ],
           }.to_json,
           headers: { "Content-Type": "application/json" },
         )
@@ -702,6 +706,9 @@ RSpec.describe Easee::Client do
           charging?: true,
           disconnected?: false,
           online?: true,
+          total_power: 7.4,
+          session_energy: 12.34,
+          dynamic_charger_current: 16.0,
         )
 
       expect(state.meter_reading)
@@ -712,7 +719,8 @@ RSpec.describe Easee::Client do
     end
 
     it "handles 429 HTTP errors" do
-      stub_request(:get, "https://api.easee.cloud/api/chargers/C123/state")
+      stub_request(:get, "https://api.easee.cloud/state/C123/observations")
+        .with(query: { ids: "109,250,120,121,48,124" })
         .to_return(status: 429)
 
       token_cache = ActiveSupport::Cache::MemoryStore.new
@@ -729,7 +737,8 @@ RSpec.describe Easee::Client do
     end
 
     it "raises a Forbidden error when we have no access to the charger (anymore)" do
-      stub_request(:get, "https://api.easee.cloud/api/chargers/C123/state")
+      stub_request(:get, "https://api.easee.cloud/state/C123/observations")
+        .with(query: { ids: "109,250,120,121,48,124" })
         .to_return(status: 403)
 
       token_cache = ActiveSupport::Cache::MemoryStore.new

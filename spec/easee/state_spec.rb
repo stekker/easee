@@ -93,4 +93,52 @@ RSpec.describe Easee::State do
       expect(state.meter_reading).to have_attributes(reading_kwh: 23.67, timestamp: now)
     end
   end
+
+  describe ".from_observations" do
+    it "builds the state from the observation ids that replaced the state endpoint" do
+      state = Easee::State.from_observations(
+        [
+          { "id" => 109, "timestamp" => "2023-08-29T12:20:09.000Z", "dataType" => 4, "value" => 3 },
+          { "id" => 250, "timestamp" => "2023-08-29T12:20:09.000Z", "dataType" => 2, "value" => true },
+          { "id" => 120, "timestamp" => "2023-08-29T12:20:09.000Z", "dataType" => 3, "value" => 7.4 },
+          { "id" => 121, "timestamp" => "2023-08-29T12:20:09.000Z", "dataType" => 3, "value" => 12.34 },
+          { "id" => 48, "timestamp" => "2023-08-29T12:20:09.000Z", "dataType" => 3, "value" => 16.0 },
+          { "id" => 124, "timestamp" => "2023-08-29T12:20:09.000Z", "dataType" => 3, "value" => 23.67 },
+        ],
+      )
+
+      expect(state).to have_attributes(
+        charger_op_mode: :charging,
+        online?: true,
+        total_power: 7.4,
+        session_energy: 12.34,
+        dynamic_charger_current: 16.0,
+      )
+      expect(state.meter_reading)
+        .to have_attributes(reading_kwh: 23.67, timestamp: Time.utc(2023, 8, 29, 12, 20, 9))
+    end
+
+    it "coerces stringly typed observation values" do
+      state = Easee::State.from_observations(
+        [
+          { "id" => 109, "value" => "3" },
+          { "id" => 250, "value" => "true" },
+          { "id" => 120, "value" => "7.4" },
+        ],
+      )
+
+      expect(state).to have_attributes(charging?: true, online?: true, total_power: 7.4)
+    end
+
+    it "reads a charger that is offline and idle without raising" do
+      state = Easee::State.from_observations(
+        [
+          { "id" => 109, "value" => 1 },
+          { "id" => 250, "value" => false },
+        ],
+      )
+
+      expect(state).to have_attributes(disconnected?: true, online?: false)
+    end
+  end
 end

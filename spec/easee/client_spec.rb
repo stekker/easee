@@ -271,7 +271,7 @@ RSpec.describe Easee::Client do
         .to raise_error(Easee::Errors::InvalidCredentials)
     end
 
-    it "raises Forbidden errors when the request is rerouted with X-Amzn-Errortype: ForbiddenException" do
+    it "treats an X-Amzn-Errortype: ForbiddenException reroute as a rate limit, not access denial" do
       user_name = "test"
       password = "old"
 
@@ -296,8 +296,9 @@ RSpec.describe Easee::Client do
 
       client = Easee::Client.new(user_name:, password:)
 
-      expect { client.login }
-        .to raise_error(Easee::Errors::Forbidden)
+      expect { client.login }.to raise_error(Easee::Errors::RateLimitExceeded) do |error|
+        expect(error).to be_retryable
+      end
     end
   end
 

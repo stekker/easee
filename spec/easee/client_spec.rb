@@ -737,7 +737,7 @@ RSpec.describe Easee::Client do
       end
     end
 
-    it "treats a 403 as a transient rate limit, not a permanent access denial" do
+    it "raises a Forbidden error when we have no access to the charger (anymore)" do
       stub_request(:get, "https://api.easee.cloud/state/C123/observations")
         .with(query: { ids: "109,250,120,121,48,124" })
         .to_return(status: 403)
@@ -750,9 +750,7 @@ RSpec.describe Easee::Client do
 
       client = Easee::Client.new(user_name: "easee", password: "money", token_cache:)
 
-      expect { client.state("C123") }.to raise_error(Easee::Errors::RateLimitExceeded) do |error|
-        expect(error).to be_retryable
-      end
+      expect { client.state("C123") }.to raise_error(Easee::Errors::Forbidden)
     end
   end
 

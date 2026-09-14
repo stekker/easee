@@ -166,8 +166,8 @@ module Easee
       retry
     rescue Faraday::TooManyRequestsError => e
       raise Errors::RateLimitExceeded.new("Rate limit exceeded", e.response)
-    rescue Faraday::ForbiddenError => e
-      raise Errors::RateLimitExceeded.new("Access denied, treated as transient", e.response)
+    rescue Faraday::ForbiddenError
+      raise Errors::Forbidden, "Access denied to charger"
     rescue Faraday::Error => e
       raise_credentials_or_request_error(e)
     end
